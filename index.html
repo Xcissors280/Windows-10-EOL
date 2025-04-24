@@ -8,7 +8,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       height: 100vh;
-      background: url('windows10.jpg') no-repeat center center fixed;
+      background: url('wallpaper.webp') no-repeat center center fixed;
       background-size: cover;
       display: flex;
       align-items: center;
@@ -35,61 +35,74 @@
 
   <script>
     const countdownEl = document.getElementById('countdown');
-    const targetDate = new Date('2025-10-14T00:00:00Z');
-    let offset = 0;
-
-    fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC')
-      .then(res => res.json())
-      .then(data => {
-        const year = data.year;
-        const month = data.month - 1; // JavaScript months are 0-based
-        const day = data.day;
-        const hour = data.hour;
-        const minute = data.minute;
-        const second = data.seconds;
-
-        const serverTime = new Date(Date.UTC(year, month, day, hour, minute, second));
-        offset = serverTime - new Date();
-        startCountdown();
-      })
-      .catch(() => {
-        // Fallback to backup API if the first one fails
-        fetch('https://worldtimeapi.org/api/timezone/Etc/UTC')
-          .then(res => res.json())
-          .then(data => {
-            const serverTime = new Date(data.datetime);
-            offset = serverTime - new Date();
-            startCountdown();
-          })
-          .catch(() => {
-            // If all APIs fail, use local time (but show a warning)
-            countdownEl.innerText = "Unable to fetch server time. Using local time (may be inaccurate).";
-            startCountdown();
-          });
-      });
-
-    function startCountdown() {
-      function updateCountdown() {
-        const localNow = new Date();
-        const now = new Date(localNow.getTime() + offset);
-        const diff = targetDate - now;
-
-        if (diff <= 0) {
-          countdownEl.innerText = "Windows 10 has reached end of life!";
-          return;
+    const targetDate = new Date('2025-10-14T00:00:00Z').getTime();
+    let serverTimeOffset = 0;
+    
+    // URL to your time server (replace with your actual deployed server URL)
+    // For example: https://your-worker.your-username.workers.dev
+    const timeServerUrl = 'https://time.atserver.us';
+    
+    // Fetch the current time from your server
+    async function syncWithServer() {
+      try {
+        const response = await fetch(timeServerUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}`);
         }
+        
+        // The server returns the timestamp in milliseconds
+        const serverTime = parseInt(await response.text());
+        
+        if (isNaN(serverTime)) {
+          throw new Error('Invalid timestamp from server');
+        }
+        
+        // Calculate offset between local time and server time
+        const localTime = Date.now();
+        serverTimeOffset = serverTime - localTime;
+        
+        console.log('Time synchronized with server. Offset:', serverTimeOffset, 'ms');
+      } catch (error) {
+        console.error('Failed to sync with server:', error);
+        // If we can't get server time, we'll use local time (not ideal but fallback)
+        serverTimeOffset = 0;
+      }
+      
+      // Start or update the countdown after syncing
+      updateCountdown();
+    }
 
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((diff / (1000 * 60)) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
+    // Update the countdown every second
+    function updateCountdown() {
+      // Get current time with server offset applied
+      const currentTime = Date.now() + serverTimeOffset;
+      const difference = targetDate - currentTime;
 
-        countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+      // If the target date has passed
+      if (difference <= 0) {
+        countdownEl.innerText = "Windows 10 has reached end of life!";
+        return;
       }
 
-      updateCountdown();
-      setInterval(updateCountdown, 1000);
+      // Calculate the time units
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      // Update the display in the same format as the example
+      countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
     }
+
+    // Sync with server time on load
+    syncWithServer();
+    
+    // Re-sync with server time periodically (every 10 minutes)
+    setInterval(syncWithServer, 600000);
+    
+    // Update countdown display every second
+    setInterval(updateCountdown, 1000);
   </script>
 </body>
 </html>
