@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windows 10 EOL Countdown</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      height: 100vh;
+      background: url('windows10.jpg') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+    }
+    .container {
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 2rem;
+      border-radius: 12px;
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    .countdown { font-size: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Windows 10 Reaches End of Life in</h1>
+    <div class="countdown" id="countdown">Loading...</div>
+  </div>
+
+  <script>
+    const countdownEl = document.getElementById('countdown');
+    const targetDate = new Date('2025-10-14T00:00:00Z');
+    let offset = 0;
+
+    fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC')
+      .then(res => res.json())
+      .then(data => {
+        const year = data.year;
+        const month = data.month - 1; // JavaScript months are 0-based
+        const day = data.day;
+        const hour = data.hour;
+        const minute = data.minute;
+        const second = data.seconds;
+
+        const serverTime = new Date(Date.UTC(year, month, day, hour, minute, second));
+        offset = serverTime - new Date();
+        startCountdown();
+      })
+      .catch(() => {
+        // Fallback to backup API if the first one fails
+        fetch('https://worldtimeapi.org/api/timezone/Etc/UTC')
+          .then(res => res.json())
+          .then(data => {
+            const serverTime = new Date(data.datetime);
+            offset = serverTime - new Date();
+            startCountdown();
+          })
+          .catch(() => {
+            // If all APIs fail, use local time (but show a warning)
+            countdownEl.innerText = "Unable to fetch server time. Using local time (may be inaccurate).";
+            startCountdown();
+          });
+      });
+
+    function startCountdown() {
+      function updateCountdown() {
+        const localNow = new Date();
+        const now = new Date(localNow.getTime() + offset);
+        const diff = targetDate - now;
+
+        if (diff <= 0) {
+          countdownEl.innerText = "Windows 10 has reached end of life!";
+          return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+      }
+
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+  </script>
+</body>
+</html>
