@@ -40,7 +40,7 @@
       text-align: center;
     }
     .credits a {
-      color: #1e90ff;
+      color: #01adef;
       text-decoration: none;
       transition: color 0.3s;
     }
@@ -57,50 +57,129 @@
   </div>
   
   <div class="credits">
-    <span>Designed by <a href="https://atserver.us" target="_blank">Xcissors</a> and <a href="https://boxersteavee.dev" target="_blank">Boxersteavee</a></span>
+    <span>Created by <a href="https://atserver.us" target="_blank">Xcissors</a> and <a href="https://boxersteavee.dev" target="_blank">Boxersteavee</a> on <a href="https://github.com/Xcissors280/Windows-10-EOL" target="_blank">GitHub</a></span>
   </div>
 
   <script>
     const countdownEl = document.getElementById('countdown');
-    const targetDate = new Date('2025-10-14T00:00:00Z').getTime();
-    let serverTimeOffset = 0;
+    const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();
+    // You can also use the Unix timestamp: 1760425200000
+    let serverTimeOffset = null; // Set to null initially to prevent using local time
+    let connectingMessageTimeout;
     
-    // Updated time server URL with API endpoint
-    const timeServerUrl = 'https://time.atserver.us/api/v1';
+    // Time server URLs
+    const primaryTimeServerUrl = 'https://time.atserver.us/api/v1';
+    const backupTimeServerUrl = 'https://timeapi.io/api/Time/current/zone?timeZone=UTC';
     
-    // Fetch the current time from your server
-    async function syncWithServer() {
+    // Show connecting message
+    function showConnectingMessage() {
+      countdownEl.innerText = "Connecting To Time Server...";
+    }
+    
+    // Fetch the current time from primary server
+    async function syncWithPrimaryServer() {
       try {
-        const response = await fetch(timeServerUrl);
+        showConnectingMessage();
+        
+        const response = await fetch(primaryTimeServerUrl);
         
         if (!response.ok) {
-          throw new Error(`Server returned ${response.status}`);
+          throw new Error(`Primary server returned ${response.status}`);
         }
         
         // The server returns the timestamp in milliseconds
         const serverTime = parseInt(await response.text());
         
         if (isNaN(serverTime)) {
-          throw new Error('Invalid timestamp from server');
+          throw new Error('Invalid timestamp from primary server');
         }
         
         // Calculate offset between local time and server time
         const localTime = Date.now();
         serverTimeOffset = serverTime - localTime;
         
-        console.log('Time synchronized with server. Offset:', serverTimeOffset, 'ms');
+        console.log('Time synchronized with primary server. Offset:', serverTimeOffset, 'ms');
+        clearTimeout(connectingMessageTimeout);
+        updateCountdown();
+        startCountdown(); // Start the countdown interval
+        return true;
       } catch (error) {
-        console.error('Failed to sync with server:', error);
-        // If we can't get server time, we'll use local time (not ideal but fallback)
-        serverTimeOffset = 0;
+        console.error('Failed to sync with primary server:', error);
+        return false;
+      }
+    }
+    
+    // Fetch time from backup server
+    async function syncWithBackupServer() {
+      try {
+        showConnectingMessage();
+        
+        const response = await fetch(backupTimeServerUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Backup server returned ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Construct date from response JSON
+        const serverDate = new Date(
+          data.year, 
+          data.month - 1, // JavaScript months are 0-indexed
+          data.day,
+          data.hour,
+          data.minute,
+          data.seconds,
+          data.milliSeconds
+        );
+        
+        const serverTime = serverDate.getTime();
+        
+        // Calculate offset between local time and server time
+        const localTime = Date.now();
+        serverTimeOffset = serverTime - localTime;
+        
+        console.log('Time synchronized with backup server. Offset:', serverTimeOffset, 'ms');
+        clearTimeout(connectingMessageTimeout);
+        updateCountdown();
+        startCountdown(); // Start the countdown interval
+        return true;
+      } catch (error) {
+        console.error('Failed to sync with backup server:', error);
+        return false;
+      }
+    }
+    
+    // Try to synchronize with both servers, with retry mechanism
+    async function syncTime() {
+      showConnectingMessage();
+      
+      // Try primary server first
+      const primarySuccess = await syncWithPrimaryServer();
+      
+      if (primarySuccess) {
+        return;
       }
       
-      // Start or update the countdown after syncing
-      updateCountdown();
+      // If primary fails, try backup server
+      const backupSuccess = await syncWithBackupServer();
+      
+      if (backupSuccess) {
+        return;
+      }
+      
+      // If both servers fail, retry after 12 seconds
+      console.log('Both time servers failed, retrying in 12 seconds...');
+      connectingMessageTimeout = setTimeout(syncTime, 12000);
     }
 
     // Update the countdown every second
     function updateCountdown() {
+      // Only update if we have a valid server time offset
+      if (serverTimeOffset === null) {
+        return; // Don't update if we don't have a valid server time
+      }
+      
       // Get current time with server offset applied
       const currentTime = Date.now() + serverTimeOffset;
       const difference = targetDate - currentTime;
@@ -121,14 +200,19 @@
       countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
     }
 
-    // Sync with server time on load
-    syncWithServer();
+    // Initial time sync
+    syncTime();
     
-    // Re-sync with server time periodically (every 10 minutes)
-    setInterval(syncWithServer, 600000);
+    // Re-sync time periodically (every 10 minutes)
+    setInterval(syncTime, 600000);
     
-    // Update countdown display every second
-    setInterval(updateCountdown, 1000);
+    // Only start the countdown interval if we have a valid server time
+    function startCountdown() {
+      if (serverTimeOffset !== null) {
+        // Update countdown display every second
+        setInterval(updateCountdown, 1000);
+      }
+    }
   </script>
 </body>
 </html>
