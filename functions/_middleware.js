@@ -12,36 +12,39 @@ export async function onRequest(context) {
   // Get the HTML content
   const originalHtml = await response.text();
   
-  // Add meta tags for SEO without changing the actual countdown functionality
-  const pageTitle = "RIP Windows 10 | Countdown to Windows 10's End of Life";
-  const pageDescription = "Windows 10 reaches end of life on October 14, 2025. <t:1760425200:R> Track the exact time remaining.";
+  // Calculate the exact countdown just like the website does
+  // Target date (October 14, 2025 at 07:00:00 UTC)
+  const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();
   
-  // Modify the HTML by adding meta tags for SEO
-  let modifiedHtml = originalHtml;
+  // Current time
+  const currentTime = Date.now();
+  const difference = targetDate - currentTime;
+
+  // Generate the countdown text in the exact same format as the website
+  let countdownText;
+  if (difference <= 0) {
+    countdownText = "Windows 10 has reached end of life!";
+  } else {
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+    countdownText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+  }
   
-  // Keep the original title but add meta tags
-  modifiedHtml = modifiedHtml.replace('</head>', `
-    <!-- SEO meta tags -->
-    <meta name="description" content="${pageDescription}" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="${pageTitle}" />
-    <meta name="twitter:description" content="${pageDescription}" />
-    <meta property="og:title" content="${pageTitle}" />
-    <meta property="og:description" content="${pageDescription}" />
-    <meta property="og:type" content="website" />
-    </head>`);
-  
-  // Set the initial countdown value to a loading message that will be updated by the script
-  // This preserves the original functionality without introducing any middleware-specific time calculation
-  modifiedHtml = modifiedHtml.replace(
-    /<div class="countdown" id="countdown">.*?<\/div>/i,
-    `<div class="countdown" id="countdown">Loading countdown...</div>`
+  // Replace the loading message with the pre-calculated countdown
+  let modifiedHtml = originalHtml.replace(
+    /<div class="countdown" id="countdown">Loading...<\/div>/,
+    `<div class="countdown" id="countdown">${countdownText}</div>`
   );
   
-  // Ensure the targetDate in the script is correct - it should match the original (October 14, 2025 at 07:00:00 UTC)
+  // Modify the sync functions to immediately display the countdown while still fetching accurate time
   modifiedHtml = modifiedHtml.replace(
-    /const targetDate = new Date\('.*?'\)\.getTime\(\);/,
-    `const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();`
+    'function showConnectingMessage() {',
+    `function showConnectingMessage() {
+      // Don't show "Connecting To Time Server..." since we already have a pre-calculated countdown
+      // countdownEl.innerText = "Connecting To Time Server...";
+    }`
   );
   
   // Return the modified HTML with the same status and headers
