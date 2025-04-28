@@ -12,13 +12,11 @@ export async function onRequest(context) {
   // Get the HTML content
   const originalHtml = await response.text();
   
-  // Calculate current countdown for embedding purposes
+  // Calculate the current countdown for metadata only
+  // This won't affect the main page functionality
   const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();
   const currentTime = Date.now();
-  
-  // Calculate difference with a small adjustment to ensure correct day count
-  // Add a buffer of 1000ms (1 second) to ensure day boundary calculations are correct
-  const difference = targetDate - currentTime + 1000;
+  const difference = targetDate - currentTime;
   
   let countdownText;
   if (difference <= 0) {
@@ -31,17 +29,20 @@ export async function onRequest(context) {
     countdownText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
   }
   
-  // Add meta tags for embeds but leave the main content unchanged
+  // Create metadata for embeds only
   const pageTitle = `Windows 10 End of Life: ${countdownText}`;
   const pageDescription = `Windows 10 support ends on October 14, 2025. Time remaining: ${countdownText}`;
   
-  // Only modify the meta tags, leave all other HTML unchanged
-  let modifiedHtml = originalHtml.replace(
+  // Only modify the metadata, leave the rest of the page as is
+  let modifiedHtml = originalHtml;
+  
+  // Replace title for embeds
+  modifiedHtml = modifiedHtml.replace(
     /<title>.*?<\/title>/,
     `<title>${pageTitle}</title>`
   );
   
-  // Add OpenGraph and Twitter meta tags for embeds
+  // Add meta tags for embeds
   modifiedHtml = modifiedHtml.replace(
     '</head>',
     `  <!-- Meta tags for social media embeds -->
@@ -55,7 +56,7 @@ export async function onRequest(context) {
 </head>`
   );
   
-  // Return the modified HTML with just the meta tags changed
+  // Return the modified HTML with metadata added but main functionality unchanged
   return new Response(modifiedHtml, {
     status: response.status,
     statusText: response.statusText,
