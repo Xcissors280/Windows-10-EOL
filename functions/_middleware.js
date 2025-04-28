@@ -12,10 +12,13 @@ export async function onRequest(context) {
   // Get the HTML content
   const originalHtml = await response.text();
   
-  // Calculate initial countdown (this will be replaced by client-side script)
+  // Calculate current countdown for embedding purposes
   const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();
   const currentTime = Date.now();
-  const difference = targetDate - currentTime;
+  
+  // Calculate difference with a small adjustment to ensure correct day count
+  // Add a buffer of 1000ms (1 second) to ensure day boundary calculations are correct
+  const difference = targetDate - currentTime + 1000;
   
   let countdownText;
   if (difference <= 0) {
@@ -28,22 +31,17 @@ export async function onRequest(context) {
     countdownText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
   }
   
-  // Add meta tags for embeds while keeping the rest of the HTML unchanged
+  // Add meta tags for embeds but leave the main content unchanged
   const pageTitle = `Windows 10 End of Life: ${countdownText}`;
   const pageDescription = `Windows 10 support ends on October 14, 2025. Time remaining: ${countdownText}`;
   
-  // Insert pre-calculated countdown
+  // Only modify the meta tags, leave all other HTML unchanged
   let modifiedHtml = originalHtml.replace(
-    /<div class="countdown" id="countdown">Loading...<\/div>/,
-    `<div class="countdown" id="countdown">${countdownText}</div>`
-  );
-  
-  // Add meta tags for embeds
-  modifiedHtml = modifiedHtml.replace(
     /<title>.*?<\/title>/,
     `<title>${pageTitle}</title>`
   );
   
+  // Add OpenGraph and Twitter meta tags for embeds
   modifiedHtml = modifiedHtml.replace(
     '</head>',
     `  <!-- Meta tags for social media embeds -->
@@ -57,16 +55,7 @@ export async function onRequest(context) {
 </head>`
   );
   
-  // Make sure the client-side script doesn't overwrite our countdown while connecting
-  modifiedHtml = modifiedHtml.replace(
-    'function showConnectingMessage() {',
-    `function showConnectingMessage() {
-      // Skip showing "Connecting To Time Server..." since we already have a countdown displayed
-      // countdownEl.innerText = "Connecting To Time Server...";
-    }`
-  );
-  
-  // Return the modified HTML
+  // Return the modified HTML with just the meta tags changed
   return new Response(modifiedHtml, {
     status: response.status,
     statusText: response.statusText,
