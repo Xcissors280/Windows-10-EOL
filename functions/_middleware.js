@@ -14,7 +14,7 @@ export async function onRequest(context) {
   
   // Add meta tags for SEO without changing the actual countdown functionality
   const pageTitle = "RIP Windows 10 | Countdown to Windows 10's End of Life";
-  const pageDescription = "Windows 10 reaches end of life on October 14, 2025. Track the exact time remaining.";
+  const pageDescription = "Windows 10 reaches end of life on October 14, 2025. <t:1760425200:R> Track the exact time remaining.";
   
   // Modify the HTML by adding meta tags for SEO
   let modifiedHtml = originalHtml;
