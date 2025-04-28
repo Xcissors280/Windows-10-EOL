@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RIP Windows 10 | Countdown to Windows 10's End of Life</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <!-- Primary Meta Tags - These will be updated from JavaScript on page load -->
+  <meta name="title" content="RIP Windows 10 | Countdown to Windows 10's End of Life" />
+  <meta id="meta-description" name="description" content="Windows 10 Reaches End of Life in 169 days, 12 hours, 9 minutes, 21 seconds." />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://ripwindows10.com/" />
+  <meta property="og:title" content="RIP Windows 10 | Countdown to Windows 10's End of Life" />
+  <meta id="og-description" property="og:description" content="Windows 10 Reaches End of Life in 169 days, 12 hours, 9 minutes, 21 seconds." />
+  <meta property="og:image" content="https://windows-10-eol.atserver.us/wallpaper.webp" />
+  <!-- Twitter -->
+  <meta property="twitter:url" content="https://ripwindows10.com/" />
+  <meta property="twitter:title" content="RIP Windows 10 | Countdown to Windows 10's End of Life" />
+  <meta id="twitter-description" property="twitter:description" content="Windows 10 Reaches End of Life in 169 days, 12 hours, 9 minutes, 21 seconds." />
+  <meta property="twitter:image" content="https://windows-10-eol.atserver.us/wallpaper.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -62,6 +76,14 @@
 
   <script>
     const countdownEl = document.getElementById('countdown');
+    // Get meta tags that need to be updated
+    const metaDescription = document.getElementById('meta-description');
+    const ogDescription = document.getElementById('og-description');
+    const twitterDescription = document.getElementById('twitter-description');
+    
+    // For social sharing, meta tags should have initial values when page is first loaded
+    // These won't be seen by users directly, but will be seen when shared on social media
+    
     const targetDate = new Date('2025-10-15T07:00:00.000Z').getTime();
     // You can also use the Unix timestamp: 1760425200000
     let serverTimeOffset = null; // Set to null initially to prevent using local time
@@ -74,6 +96,15 @@
     // Show connecting message
     function showConnectingMessage() {
       countdownEl.innerText = "Connecting To Time Server...";
+      // Don't update meta tags when connecting - leave the initial values
+    }
+    
+    // Update all meta tags with new countdown text
+    function updateMetaTags(countdownText) {
+      const metaText = "Windows 10 Reaches End of Life in " + countdownText;
+      metaDescription.setAttribute('content', metaText);
+      ogDescription.setAttribute('content', metaText);
+      twitterDescription.setAttribute('content', metaText);
     }
     
     // Fetch the current time from primary server
@@ -186,7 +217,9 @@
 
       // If the target date has passed
       if (difference <= 0) {
-        countdownEl.innerText = "Windows 10 has reached end of life!";
+        const endOfLifeMessage = "Windows 10 has reached end of life!";
+        countdownEl.innerText = endOfLifeMessage;
+        updateMetaTags(endOfLifeMessage);
         return;
       }
 
@@ -196,8 +229,35 @@
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
+      // Format the countdown text
+      const countdownText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+      
       // Update the display in the same format as the example
-      countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+      countdownEl.innerText = countdownText;
+      
+      // Update meta tags with the same countdown
+      updateMetaTags(countdownText);
+    }
+
+    // For page load, calculate an initial countdown based on local time
+    // This ensures meta tags have values for social sharing
+    function calculateInitialCountdown() {
+      const now = new Date();
+      const difference = targetDate - now.getTime();
+      
+      // If the target date has passed
+      if (difference <= 0) {
+        return "Windows 10 has reached end of life!";
+      }
+
+      // Calculate the time units
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      // Format the countdown text
+      return `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
     }
 
     // Initial time sync
