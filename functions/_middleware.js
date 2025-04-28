@@ -12,40 +12,16 @@ export async function onRequest(context) {
   // Get the HTML content
   const originalHtml = await response.text();
   
-  // The target date in UTC (October 14, 2025 at 07:00:00 UTC)
-  const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();
+  // Add meta tags for SEO without changing the actual countdown functionality
+  const pageTitle = "RIP Windows 10 | Countdown to Windows 10's End of Life";
+  const pageDescription = "Windows 10 reaches end of life on October 14, 2025. Track the exact time remaining.";
   
-  // Current server time in UTC
-  const serverTime = Date.now();
-  
-  // Calculate the time difference
-  const difference = targetDate - serverTime;
-  
-  // Format the countdown for initial display
-  let countdownText;
-  if (difference <= 0) {
-    countdownText = "Windows 10 has reached end of life!";
-  } else {
-    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-    countdownText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
-  }
-  
-  // Prepare meta tags
-  const pageTitle = `Windows 10 End of Life Countdown`;
-  const pageDescription = `Windows 10 reaches end of life on October 14, 2025`;
-  
-  // Modify HTML content
+  // Modify the HTML by adding meta tags for SEO
   let modifiedHtml = originalHtml;
   
-  // Replace title
-  modifiedHtml = modifiedHtml.replace(/<title>.*?<\/title>/i, `<title>${pageTitle}</title>`);
-  
-  // Add meta tags before closing head tag
+  // Keep the original title but add meta tags
   modifiedHtml = modifiedHtml.replace('</head>', `
-    <!-- SEO meta tags with accurate date information -->
+    <!-- SEO meta tags -->
     <meta name="description" content="${pageDescription}" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${pageTitle}" />
@@ -55,43 +31,17 @@ export async function onRequest(context) {
     <meta property="og:type" content="website" />
     </head>`);
   
-  // Set the initial countdown value with server-rendered time
+  // Set the initial countdown value to a loading message that will be updated by the script
+  // This preserves the original functionality without introducing any middleware-specific time calculation
   modifiedHtml = modifiedHtml.replace(
     /<div class="countdown" id="countdown">.*?<\/div>/i,
-    `<div class="countdown" id="countdown">${countdownText}</div>`
+    `<div class="countdown" id="countdown">Loading countdown...</div>`
   );
   
-  // Inject a server timestamp into the page that the client JavaScript can use
-  // This helps ensure time sync without modifying the original script logic
+  // Ensure the targetDate in the script is correct - it should match the original (October 14, 2025 at 07:00:00 UTC)
   modifiedHtml = modifiedHtml.replace(
-    '// You can also use the Unix timestamp: 1760425200000',
-    `// You can also use the Unix timestamp: 1760425200000
-    // Server time injected by middleware
-    const serverRenderedTime = ${serverTime}; // UTC timestamp from server at page render time`
-  );
-  
-  // Modify the syncTime function to use the server-provided time as a fallback
-  modifiedHtml = modifiedHtml.replace(
-    '// If both servers fail, retry after 12 seconds',
-    `// Use server-rendered time as a fallback if both time servers fail
-      if (!primarySuccess && !backupSuccess) {
-        console.log('Using server-rendered time as fallback');
-        // Use the time that was injected by the server when the page was rendered
-        // Calculate offset between current local time and server-rendered time
-        const localTime = Date.now();
-        const serverTimeAtRender = serverRenderedTime;
-        const timeSinceRender = localTime - performance.timing.navigationStart;
-        const estimatedCurrentServerTime = serverTimeAtRender + timeSinceRender;
-        serverTimeOffset = estimatedCurrentServerTime - localTime;
-        
-        console.log('Time synchronized with server-rendered time. Offset:', serverTimeOffset, 'ms');
-        clearTimeout(connectingMessageTimeout);
-        updateCountdown();
-        startCountdown();
-        return true;
-      }
-      
-      // If all fallbacks fail, retry after 12 seconds`
+    /const targetDate = new Date\('.*?'\)\.getTime\(\);/,
+    `const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();`
   );
   
   // Return the modified HTML with the same status and headers
