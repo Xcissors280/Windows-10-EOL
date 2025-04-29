@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RIP Windows 10 | Countdown to Windows 10's End of Life</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
@@ -10,13 +10,15 @@
     body {
       overscroll-behavior-y: none;
       overscroll-behavior-x: none;
-      height: 100vh;
+      min-height: 100vh;
+      height: auto;
       background: url('wallpaper.webp') no-repeat center center fixed;
       background-size: cover;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      padding: 2rem 1rem;
       color: white;
       font-family: 'Segoe UI', sans-serif;
       text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
@@ -25,19 +27,29 @@
     .container {
       text-align: center;
       background-color: rgba(0, 0, 0, 0.4);
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 12px;
+      margin: auto 0;
+      width: 100%;
+      max-width: 600px;
     }
-    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-    .countdown { font-size: 2rem; }
+    h1 { 
+      font-size: clamp(1.5rem, 7vw, 2.5rem);
+      margin-bottom: 1rem;
+    }
+    .countdown { 
+      font-size: clamp(1.2rem, 5vw, 2rem);
+      word-wrap: break-word;
+    }
     .credits {
       background-color: rgba(0, 0, 0, 0.4);
-      padding: 0.7rem 1.5rem;
+      padding: 0.7rem 1rem;
       border-radius: 8px;
       font-size: 0.9rem;
-      position: absolute;
-      bottom: 20px;
+      width: 100%;
+      max-width: 600px;
       text-align: center;
+      margin-top: 2rem;
     }
     .credits a {
       color: #01adef;
@@ -59,10 +71,9 @@
   <div class="credits">
     <span>Created by <a href="https://atserver.us" target="_blank">Xcissors</a> and <a href="https://boxersteavee.dev" target="_blank">Boxersteavee</a> on <a href="https://github.com/Xcissors280/Windows-10-EOL" target="_blank">GitHub</a></span>
   </div>
-
   <script>
     const countdownEl = document.getElementById('countdown');
-    const targetDate = 176051159999; // October 14, 2025, 23:59:59 UTC
+    const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC
     
     // Server-provided timestamp (will be injected by middleware)
     const serverTime = SERVER_TIMESTAMP_PLACEHOLDER;
@@ -76,23 +87,23 @@
       // Calculate current time using server offset
       const currentTime = Date.now() + serverTimeOffset;
       const difference = targetDate - currentTime;
-
+      
       // If the target date has passed
       if (difference <= 0) {
         countdownEl.innerText = "Windows 10 has reached end of life!";
         return;
       }
-
+      
       // Calculate the time units
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
+      
       // Update the display
       countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
     }
-
+    
     // Initial update
     updateCountdown();
     
