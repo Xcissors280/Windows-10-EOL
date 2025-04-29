@@ -10,7 +10,7 @@
     body {
       overscroll-behavior-y: none;
       overscroll-behavior-x: none;
-      min-height: 100vh;
+      height: 100vh; /* Use height instead of min-height */
       background: url('wallpaper.webp') no-repeat center center fixed;
       background-size: cover;
       display: flex;
@@ -21,13 +21,14 @@
       font-family: 'Segoe UI', sans-serif;
       text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
       position: relative;
-      padding: 2rem 1rem;
+      overflow: hidden; /* Prevent scrolling */
     }
     .container {
       text-align: center;
       background-color: rgba(0, 0, 0, 0.4);
       padding: 2rem;
       border-radius: 12px;
+      z-index: 1;
     }
     h1 { 
       font-size: 2.5rem;
@@ -47,6 +48,7 @@
       text-align: center;
       width: auto;
       max-width: 80%;
+      z-index: 1;
     }
     .credits a {
       color: #01adef;
@@ -61,12 +63,17 @@
     /* Media queries for responsive design */
     @media (max-width: 768px) {
       body {
-        justify-content: space-between;
+        height: 100vh; /* Ensure full height on mobile */
+        padding: 0; /* Remove padding */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Space elements evenly */
       }
       .container {
         margin: auto 0;
         padding: 1.5rem;
-        max-width: 600px;
+        max-width: 90%;
+        width: 90%;
       }
       h1 {
         font-size: clamp(1.5rem, 7vw, 2.5rem);
@@ -76,10 +83,10 @@
       }
       .credits {
         position: relative;
-        bottom: auto;
-        margin-top: 2rem;
-        width: 100%;
-        max-width: 600px;
+        margin: 20px auto;
+        bottom: 20px;
+        width: 90%;
+        max-width: 90%;
       }
     }
   </style>
