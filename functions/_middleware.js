@@ -12,10 +12,12 @@ export async function onRequest(context) {
   // Get the HTML content
   const originalHtml = await response.text();
   
-  // Use Unix timestamp for the target date (October 14, 2025, 23:59:59 UTC)
-  const targetDate = 1760511599000; // Milliseconds (Unix time * 1000)
-  const currentTime = Date.now();
-  const difference = targetDate - currentTime;
+  // Get current server timestamp
+  const serverTime = Date.now();
+  
+  // Calculate countdown for metadata
+  const targetDate = 1760511599000; // October 14, 2025, 23:59:59 UTC
+  const difference = targetDate - serverTime;
   
   let countdownText;
   if (difference <= 0) {
@@ -32,19 +34,10 @@ export async function onRequest(context) {
   const pageTitle = `Windows 10 End of Life: ${countdownText}`;
   const pageDescription = `Windows 10 support ends on October 14, 2025. Time remaining: ${countdownText}`;
   
-  // Modify the HTML
-  let modifiedHtml = originalHtml;
-  
-  // Update the target date in the JavaScript to use Unix timestamp
-  modifiedHtml = modifiedHtml.replace(
-    /const targetDate = new Date\('.*?'\)\.getTime\(\);/,
-    "const targetDate = 1760511599000; // October 14, 2025, 23:59:59 UTC"
-  );
-  
-  // Update the comment below to reference the Unix timestamp
-  modifiedHtml = modifiedHtml.replace(
-    "// You can also use the Unix timestamp: 1760425200000",
-    "// Unix timestamp: 1760511599000 (October 14, 2025, 23:59:59 UTC)"
+  // Inject the server timestamp into the HTML
+  let modifiedHtml = originalHtml.replace(
+    'SERVER_TIMESTAMP_PLACEHOLDER',
+    serverTime.toString()
   );
   
   // Update title for embeds
