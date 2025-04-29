@@ -11,45 +11,44 @@
       overscroll-behavior-y: none;
       overscroll-behavior-x: none;
       min-height: 100vh;
-      height: auto;
       background: url('wallpaper.webp') no-repeat center center fixed;
       background-size: cover;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 2rem 1rem;
+      justify-content: center;
       color: white;
       font-family: 'Segoe UI', sans-serif;
       text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
       position: relative;
+      padding: 2rem 1rem;
     }
     .container {
       text-align: center;
       background-color: rgba(0, 0, 0, 0.4);
-      padding: 1.5rem;
+      padding: 2rem;
       border-radius: 12px;
-      margin: auto 0;
       width: 100%;
-      max-width: 600px;
+      max-width: 800px;
     }
     h1 { 
-      font-size: clamp(1.5rem, 7vw, 2.5rem);
+      font-size: 2.5rem;
       margin-bottom: 1rem;
     }
     .countdown { 
-      font-size: clamp(1.2rem, 5vw, 2rem);
+      font-size: 2rem;
       word-wrap: break-word;
     }
     .credits {
       background-color: rgba(0, 0, 0, 0.4);
-      padding: 0.7rem 1rem;
+      padding: 0.7rem 1.5rem;
       border-radius: 8px;
       font-size: 0.9rem;
-      width: 100%;
-      max-width: 600px;
+      position: absolute;
+      bottom: 20px;
       text-align: center;
-      margin-top: 2rem;
+      width: auto;
+      max-width: 80%;
     }
     .credits a {
       color: #01adef;
@@ -59,6 +58,31 @@
     .credits a:hover {
       color: #00bfff;
       text-decoration: underline;
+    }
+    
+    /* Media queries for responsive design */
+    @media (max-width: 768px) {
+      body {
+        justify-content: space-between;
+      }
+      .container {
+        margin: auto 0;
+        padding: 1.5rem;
+        max-width: 600px;
+      }
+      h1 {
+        font-size: clamp(1.5rem, 7vw, 2.5rem);
+      }
+      .countdown {
+        font-size: clamp(1.2rem, 5vw, 2rem);
+      }
+      .credits {
+        position: relative;
+        bottom: auto;
+        margin-top: 2rem;
+        width: 100%;
+        max-width: 600px;
+      }
     }
   </style>
 </head>
