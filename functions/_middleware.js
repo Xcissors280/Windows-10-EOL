@@ -15,8 +15,8 @@ export async function onRequest(context) {
   // Get current server timestamp
   const serverTime = Date.now();
   
-  // Calculate countdown for metadata
-  const targetDate = 1760511599999; // October 14, 2025, 23:59:59 UTC
+  // Calculate countdown for metadata using the corrected timestamp
+  const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC (last millisecond of the day)
   const difference = targetDate - serverTime;
   
   let countdownText;
@@ -31,7 +31,6 @@ export async function onRequest(context) {
   }
   
   // Create metadata for embeds
-  const pageTitle = `Windows 10 End of Life: ${countdownText}`;
   const pageDescription = `Windows 10 support ends on October 14, 2025. Time remaining: ${countdownText}`;
   
   // Inject the server timestamp into the HTML
@@ -40,22 +39,23 @@ export async function onRequest(context) {
     serverTime.toString()
   );
   
-  // Update title for embeds
+  // Update the targetDate in the JavaScript to use the correct timestamp
   modifiedHtml = modifiedHtml.replace(
-    /<title>.*?<\/title>/,
-    `<title>${pageTitle}</title>`
+    /const targetDate = \d+;/,
+    `const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC`
   );
   
-  // Add meta tags for embeds
+  // Keep the original title
+  // Add meta tags for embeds with dynamically updated countdown
   modifiedHtml = modifiedHtml.replace(
     '</head>',
     `  <!-- Meta tags for social media embeds -->
     <meta name="description" content="${pageDescription}" />
-    <meta property="og:title" content="${pageTitle}" />
+    <meta property="og:title" content="RIP Windows 10 | Countdown to Windows 10's End of Life" />
     <meta property="og:description" content="${pageDescription}" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="${pageTitle}" />
+    <meta name="twitter:title" content="RIP Windows 10 | Countdown to Windows 10's End of Life" />
     <meta name="twitter:description" content="${pageDescription}" />
 </head>`
   );
