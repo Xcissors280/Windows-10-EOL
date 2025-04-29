@@ -109,41 +109,59 @@
     // Server-provided timestamp (will be injected by middleware)
     const serverTime = SERVER_TIMESTAMP_PLACEHOLDER;
     
-    // Calculate initial time difference between target date and server time
-    const initialDifference = targetDate - serverTime;
+    // Initialize tracking variables for time drift detection
+    let pageLoadTime = Date.now();
+    let lastCheckTime = pageLoadTime;
+    let elapsedTime = 0;
+    let timeOffset = serverTime - pageLoadTime; // Initial offset between server and client
     
-    // Record the client-side time when the page loads
-    const pageLoadTime = Date.now();
-    
-    // Update the countdown every second
+    // Set up a timer that runs independently from the countdown
     function updateCountdown() {
-      // Calculate elapsed time since page load (using client's clock)
-      const elapsedSincePageLoad = Date.now() - pageLoadTime;
+      const now = Date.now();
+      const expectedElapsedTime = now - lastCheckTime;
       
-      // Calculate remaining time by subtracting elapsed time from initial difference
-      const remainingTime = initialDifference - elapsedSincePageLoad;
+      // Check if the time difference is unreasonable (more than 2 seconds off)
+      // This would indicate the system clock has been changed
+      if (Math.abs(expectedElapsedTime) > 2000) {
+        console.log("Time manipulation detected");
+        // Don't count this time jump in our elapsed time
+      } else {
+        // If time seems reasonable, add it to our elapsed time counter
+        elapsedTime += expectedElapsedTime;
+      }
+      
+      // Update the last check time for the next interval
+      lastCheckTime = now;
+      
+      // Calculate the actual time based on server time + elapsed time we've tracked
+      const currentTime = serverTime + elapsedTime;
+      const difference = targetDate - currentTime;
       
       // If the target date has passed
-      if (remainingTime <= 0) {
+      if (difference <= 0) {
         countdownEl.innerText = "Windows 10 has reached end of life!";
         return;
       }
       
       // Calculate the time units
-      const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
       
       // Update the display
       countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
     }
     
+    // Use performance.now() for more accurate time tracking if available
+    const usePerformanceAPI = typeof performance !== 'undefined' && 
+                             typeof performance.now === 'function';
+    
+    // Set a short interval to detect time manipulation
+    setInterval(updateCountdown, 1000);
+    
     // Initial update
     updateCountdown();
-    
-    // Update countdown every second
-    setInterval(updateCountdown, 1000);
   </script>
 </body>
 </html>
