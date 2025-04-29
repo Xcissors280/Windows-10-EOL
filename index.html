@@ -67,13 +67,13 @@
         padding: 0; /* Remove padding */
         display: flex;
         flex-direction: column;
-        justify-content: space-between; /* Space elements evenly */
+        justify-content: center; /* Center the container */
       }
       .container {
-        margin: auto 0;
         padding: 1.5rem;
         max-width: 90%;
         width: 90%;
+        margin-bottom: 90px; /* Make room for credits below */
       }
       h1 {
         font-size: clamp(1.5rem, 7vw, 2.5rem);
@@ -82,9 +82,11 @@
         font-size: clamp(1.2rem, 5vw, 2rem);
       }
       .credits {
-        position: relative;
-        margin: 20px auto;
-        bottom: 20px;
+        position: fixed; /* Fix to viewport */
+        bottom: 25px; /* Position above tab bar */
+        left: 0;
+        right: 0;
+        margin: 0 auto;
         width: 90%;
         max-width: 90%;
       }
