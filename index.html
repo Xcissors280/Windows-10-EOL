@@ -10,7 +10,7 @@
     body {
       overscroll-behavior-y: none;
       overscroll-behavior-x: none;
-      height: 100vh; /* Use height instead of min-height */
+      height: 100vh;
       background: url('wallpaper.webp') no-repeat center center fixed;
       background-size: cover;
       display: flex;
@@ -21,7 +21,7 @@
       font-family: 'Segoe UI', sans-serif;
       text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
       position: relative;
-      overflow: hidden; /* Prevent scrolling */
+      overflow: hidden;
     }
     .container {
       text-align: center;
@@ -63,17 +63,17 @@
     /* Media queries for responsive design */
     @media (max-width: 768px) {
       body {
-        height: 100vh; /* Ensure full height on mobile */
-        padding: 0; /* Remove padding */
+        height: 100vh;
+        padding: 0;
         display: flex;
         flex-direction: column;
-        justify-content: center; /* Center the container */
+        justify-content: center;
       }
       .container {
         padding: 1.5rem;
         max-width: 90%;
         width: 90%;
-        margin-bottom: 90px; /* Make room for credits below */
+        margin-bottom: 90px;
       }
       h1 {
         font-size: clamp(1.5rem, 7vw, 2.5rem);
@@ -82,8 +82,8 @@
         font-size: clamp(1.2rem, 5vw, 2rem);
       }
       .credits {
-        position: fixed; /* Fix to viewport */
-        bottom: 25px; /* Position above tab bar */
+        position: fixed;
+        bottom: 25px;
         left: 0;
         right: 0;
         margin: 0 auto;
@@ -103,65 +103,74 @@
     <span>Created by <a href="https://atserver.us" target="_blank">Xcissors</a> and <a href="https://boxersteavee.dev" target="_blank">Boxersteavee</a> on <a href="https://github.com/Xcissors280/Windows-10-EOL" target="_blank">GitHub</a></span>
   </div>
   <script>
+    // Use performance API for more accurate timing if available
+    const now = () => (window.performance && performance.now) ? performance.now() : Date.now();
+    
     const countdownEl = document.getElementById('countdown');
     const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC
     
-    // Server-provided timestamp (will be injected by middleware)
+    // Server-provided timestamp
     const serverTime = SERVER_TIMESTAMP_PLACEHOLDER;
     
-    // Initialize tracking variables for time drift detection
-    let pageLoadTime = Date.now();
-    let lastCheckTime = pageLoadTime;
+    // Variables for tracking time
+    let startTime = now();
+    let lastTime = startTime;
     let elapsedTime = 0;
-    let timeOffset = serverTime - pageLoadTime; // Initial offset between server and client
+    let animationFrameId;
     
-    // Set up a timer that runs independently from the countdown
+    // Only check for time manipulation every few frames
+    let frameCount = 0;
+    const CHECK_EVERY_N_FRAMES = 10; // Check time manipulation every 10 frames
+    
     function updateCountdown() {
-      const now = Date.now();
-      const expectedElapsedTime = now - lastCheckTime;
+      const currentTime = now();
+      frameCount++;
       
-      // Check if the time difference is unreasonable (more than 2 seconds off)
-      // This would indicate the system clock has been changed
-      if (Math.abs(expectedElapsedTime) > 2000) {
-        console.log("Time manipulation detected");
-        // Don't count this time jump in our elapsed time
+      // Only check for time manipulation periodically to save resources
+      if (frameCount >= CHECK_EVERY_N_FRAMES) {
+        const expectedElapsed = currentTime - lastTime;
+        
+        // If more than 5 seconds have passed when we expected ~167ms * 10 frames (about 1.67s)
+        // then the system clock has likely been tampered with
+        if (expectedElapsed > 5000) {
+          // Don't add this suspicious time jump to our elapsed counter
+          startTime = currentTime - elapsedTime;
+        } else {
+          // Time seems normal, update elapsed time
+          elapsedTime = currentTime - startTime;
+        }
+        
+        lastTime = currentTime;
+        frameCount = 0;
       } else {
-        // If time seems reasonable, add it to our elapsed time counter
-        elapsedTime += expectedElapsedTime;
+        // For most frames, just update elapsed time without checks
+        elapsedTime = currentTime - startTime;
       }
       
-      // Update the last check time for the next interval
-      lastCheckTime = now;
+      // Calculate actual time based on server time + our tracked elapsed time
+      const actualTime = serverTime + (elapsedTime / 1000) * 1000; // Convert to milliseconds
+      const difference = targetDate - actualTime;
       
-      // Calculate the actual time based on server time + elapsed time we've tracked
-      const currentTime = serverTime + elapsedTime;
-      const difference = targetDate - currentTime;
-      
-      // If the target date has passed
       if (difference <= 0) {
         countdownEl.innerText = "Windows 10 has reached end of life!";
+        cancelAnimationFrame(animationFrameId);
         return;
       }
       
-      // Calculate the time units
+      // Calculate time units (only when needed for display)
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
       
-      // Update the display
       countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+      
+      // Request next frame
+      animationFrameId = requestAnimationFrame(updateCountdown);
     }
     
-    // Use performance.now() for more accurate time tracking if available
-    const usePerformanceAPI = typeof performance !== 'undefined' && 
-                             typeof performance.now === 'function';
-    
-    // Set a short interval to detect time manipulation
-    setInterval(updateCountdown, 1000);
-    
-    // Initial update
-    updateCountdown();
+    // Start the animation loop
+    animationFrameId = requestAnimationFrame(updateCountdown);
   </script>
 </body>
 </html>
