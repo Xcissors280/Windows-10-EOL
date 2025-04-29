@@ -15,8 +15,8 @@ export async function onRequest(context) {
   // Get current server timestamp
   const serverTime = Date.now();
   
-  // Calculate countdown for metadata using the corrected timestamp
-  const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC (last millisecond of the day)
+  // Calculate countdown for metadata
+  const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC
   const difference = targetDate - serverTime;
   
   let countdownText;
@@ -39,14 +39,7 @@ export async function onRequest(context) {
     serverTime.toString()
   );
   
-  // Update the targetDate in the JavaScript to use the correct timestamp
-  modifiedHtml = modifiedHtml.replace(
-    /const targetDate = \d+;/,
-    `const targetDate = 1760511599999; // October 14, 2025, 23:59:59.999 UTC`
-  );
-  
-  // Keep the original title
-  // Add meta tags for embeds with dynamically updated countdown
+  // Add meta tags for embeds
   modifiedHtml = modifiedHtml.replace(
     '</head>',
     `  <!-- Meta tags for social media embeds -->
