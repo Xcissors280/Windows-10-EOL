@@ -109,27 +109,31 @@
     // Server-provided timestamp (will be injected by middleware)
     const serverTime = SERVER_TIMESTAMP_PLACEHOLDER;
     
-    // Calculate initial time offset between server time and page load time
+    // Calculate initial time difference between target date and server time
+    const initialDifference = targetDate - serverTime;
+    
+    // Record the client-side time when the page loads
     const pageLoadTime = Date.now();
-    const serverTimeOffset = serverTime - pageLoadTime;
     
     // Update the countdown every second
     function updateCountdown() {
-      // Calculate current time using server offset
-      const currentTime = Date.now() + serverTimeOffset;
-      const difference = targetDate - currentTime;
+      // Calculate elapsed time since page load (using client's clock)
+      const elapsedSincePageLoad = Date.now() - pageLoadTime;
+      
+      // Calculate remaining time by subtracting elapsed time from initial difference
+      const remainingTime = initialDifference - elapsedSincePageLoad;
       
       // If the target date has passed
-      if (difference <= 0) {
+      if (remainingTime <= 0) {
         countdownEl.innerText = "Windows 10 has reached end of life!";
         return;
       }
       
       // Calculate the time units
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
       
       // Update the display
       countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
