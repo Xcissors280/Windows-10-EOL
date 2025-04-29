@@ -12,9 +12,8 @@ export async function onRequest(context) {
   // Get the HTML content
   const originalHtml = await response.text();
   
-  // Calculate the current countdown for metadata only
-  // This won't affect the main page functionality
-  const targetDate = new Date('2025-10-14T07:00:00.000Z').getTime();
+  // Use Unix timestamp for the target date (October 14, 2025, 23:59:59 UTC)
+  const targetDate = 1760511599000; // Milliseconds (Unix time * 1000)
   const currentTime = Date.now();
   const difference = targetDate - currentTime;
   
@@ -29,14 +28,26 @@ export async function onRequest(context) {
     countdownText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
   }
   
-  // Create metadata for embeds only
+  // Create metadata for embeds
   const pageTitle = `Windows 10 End of Life: ${countdownText}`;
   const pageDescription = `Windows 10 support ends on October 14, 2025. Time remaining: ${countdownText}`;
   
-  // Only modify the metadata, leave the rest of the page as is
+  // Modify the HTML
   let modifiedHtml = originalHtml;
   
-  // Replace title for embeds
+  // Update the target date in the JavaScript to use Unix timestamp
+  modifiedHtml = modifiedHtml.replace(
+    /const targetDate = new Date\('.*?'\)\.getTime\(\);/,
+    "const targetDate = 1760511599000; // October 14, 2025, 23:59:59 UTC"
+  );
+  
+  // Update the comment below to reference the Unix timestamp
+  modifiedHtml = modifiedHtml.replace(
+    "// You can also use the Unix timestamp: 1760425200000",
+    "// Unix timestamp: 1760511599000 (October 14, 2025, 23:59:59 UTC)"
+  );
+  
+  // Update title for embeds
   modifiedHtml = modifiedHtml.replace(
     /<title>.*?<\/title>/,
     `<title>${pageTitle}</title>`
@@ -56,7 +67,7 @@ export async function onRequest(context) {
 </head>`
   );
   
-  // Return the modified HTML with metadata added but main functionality unchanged
+  // Return the modified HTML
   return new Response(modifiedHtml, {
     status: response.status,
     statusText: response.statusText,
