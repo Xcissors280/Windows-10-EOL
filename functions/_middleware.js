@@ -16,7 +16,7 @@ export async function onRequest(context) {
   const serverTime = Date.now();
   
   // Calculate countdown for metadata
-  const targetDate = 1760511599000; // October 14, 2025, 23:59:59 UTC
+  const targetDate = 1760511599999; // October 14, 2025, 23:59:59 UTC
   const difference = targetDate - serverTime;
   
   let countdownText;
