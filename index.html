@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RIP Windows 10 | Countdown to Windows 10's End of Life</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
@@ -21,15 +21,23 @@
       font-family: 'Segoe UI', sans-serif;
       text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
       position: relative;
+      overflow: hidden;
     }
     .container {
       text-align: center;
       background-color: rgba(0, 0, 0, 0.4);
       padding: 2rem;
       border-radius: 12px;
+      z-index: 1;
     }
-    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-    .countdown { font-size: 2rem; }
+    h1 { 
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .countdown { 
+      font-size: 2rem;
+      word-wrap: break-word;
+    }
     .credits {
       background-color: rgba(0, 0, 0, 0.4);
       padding: 0.7rem 1.5rem;
@@ -38,6 +46,9 @@
       position: absolute;
       bottom: 20px;
       text-align: center;
+      width: auto;
+      max-width: 80%;
+      z-index: 1;
     }
     .credits a {
       color: #01adef;
@@ -47,6 +58,38 @@
     .credits a:hover {
       color: #00bfff;
       text-decoration: underline;
+    }
+    
+    /* Media queries for responsive design */
+    @media (max-width: 768px) {
+      body {
+        height: 100vh;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .container {
+        padding: 1.5rem;
+        max-width: 90%;
+        width: 90%;
+        margin-bottom: 90px;
+      }
+      h1 {
+        font-size: clamp(1.5rem, 7vw, 2.5rem);
+      }
+      .countdown {
+        font-size: clamp(1.2rem, 5vw, 2rem);
+      }
+      .credits {
+        position: fixed;
+        bottom: 25px;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        width: 90%;
+        max-width: 90%;
+      }
     }
   </style>
 </head>
@@ -59,160 +102,75 @@
   <div class="credits">
     <span>Created by <a href="https://atserver.us" target="_blank">Xcissors</a> and <a href="https://boxersteavee.dev" target="_blank">Boxersteavee</a> on <a href="https://github.com/Xcissors280/Windows-10-EOL" target="_blank">GitHub</a></span>
   </div>
-
   <script>
+    // Use performance API for more accurate timing if available
+    const now = () => (window.performance && performance.now) ? performance.now() : Date.now();
+    
     const countdownEl = document.getElementById('countdown');
-    const targetDate = new Date('2025-10-15T07:00:00.000Z').getTime();
-    // You can also use the Unix timestamp: 1760425200000
-    let serverTimeOffset = null; // Set to null initially to prevent using local time
-    let connectingMessageTimeout;
+    const targetDate = 1760511599999; // October 15, 2025, 6:59:59.999 UTC
     
-    // Time server URLs
-    const primaryTimeServerUrl = 'https://time.atserver.us/api/v1';
-    const backupTimeServerUrl = 'https://timeapi.io/api/Time/current/zone?timeZone=UTC';
+    // Server-provided timestamp
+    const serverTime = SERVER_TIMESTAMP_PLACEHOLDER;
     
-    // Show connecting message
-    function showConnectingMessage() {
-      countdownEl.innerText = "Connecting To Time Server...";
-    }
+    // Variables for tracking time
+    let startTime = now();
+    let lastTime = startTime;
+    let elapsedTime = 0;
+    let animationFrameId;
     
-    // Fetch the current time from primary server
-    async function syncWithPrimaryServer() {
-      try {
-        showConnectingMessage();
-        
-        const response = await fetch(primaryTimeServerUrl);
-        
-        if (!response.ok) {
-          throw new Error(`Primary server returned ${response.status}`);
-        }
-        
-        // The server returns the timestamp in milliseconds
-        const serverTime = parseInt(await response.text());
-        
-        if (isNaN(serverTime)) {
-          throw new Error('Invalid timestamp from primary server');
-        }
-        
-        // Calculate offset between local time and server time
-        const localTime = Date.now();
-        serverTimeOffset = serverTime - localTime;
-        
-        console.log('Time synchronized with primary server. Offset:', serverTimeOffset, 'ms');
-        clearTimeout(connectingMessageTimeout);
-        updateCountdown();
-        startCountdown(); // Start the countdown interval
-        return true;
-      } catch (error) {
-        console.error('Failed to sync with primary server:', error);
-        return false;
-      }
-    }
+    // Only check for time manipulation every few frames
+    let frameCount = 0;
+    const CHECK_EVERY_N_FRAMES = 10; // Check time manipulation every 10 frames
     
-    // Fetch time from backup server
-    async function syncWithBackupServer() {
-      try {
-        showConnectingMessage();
-        
-        const response = await fetch(backupTimeServerUrl);
-        
-        if (!response.ok) {
-          throw new Error(`Backup server returned ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Construct date from response JSON
-        const serverDate = new Date(
-          data.year, 
-          data.month - 1, // JavaScript months are 0-indexed
-          data.day,
-          data.hour,
-          data.minute,
-          data.seconds,
-          data.milliSeconds
-        );
-        
-        const serverTime = serverDate.getTime();
-        
-        // Calculate offset between local time and server time
-        const localTime = Date.now();
-        serverTimeOffset = serverTime - localTime;
-        
-        console.log('Time synchronized with backup server. Offset:', serverTimeOffset, 'ms');
-        clearTimeout(connectingMessageTimeout);
-        updateCountdown();
-        startCountdown(); // Start the countdown interval
-        return true;
-      } catch (error) {
-        console.error('Failed to sync with backup server:', error);
-        return false;
-      }
-    }
-    
-    // Try to synchronize with both servers, with retry mechanism
-    async function syncTime() {
-      showConnectingMessage();
-      
-      // Try primary server first
-      const primarySuccess = await syncWithPrimaryServer();
-      
-      if (primarySuccess) {
-        return;
-      }
-      
-      // If primary fails, try backup server
-      const backupSuccess = await syncWithBackupServer();
-      
-      if (backupSuccess) {
-        return;
-      }
-      
-      // If both servers fail, retry after 12 seconds
-      console.log('Both time servers failed, retrying in 12 seconds...');
-      connectingMessageTimeout = setTimeout(syncTime, 12000);
-    }
-
-    // Update the countdown every second
     function updateCountdown() {
-      // Only update if we have a valid server time offset
-      if (serverTimeOffset === null) {
-        return; // Don't update if we don't have a valid server time
+      const currentTime = now();
+      frameCount++;
+      
+      // Only check for time manipulation periodically to save resources
+      if (frameCount >= CHECK_EVERY_N_FRAMES) {
+        const expectedElapsed = currentTime - lastTime;
+        
+        // If more than 5 seconds have passed when we expected ~167ms * 10 frames (about 1.67s)
+        // then the system clock has likely been tampered with
+        if (expectedElapsed > 5000) {
+          // Don't add this suspicious time jump to our elapsed counter
+          startTime = currentTime - elapsedTime;
+        } else {
+          // Time seems normal, update elapsed time
+          elapsedTime = currentTime - startTime;
+        }
+        
+        lastTime = currentTime;
+        frameCount = 0;
+      } else {
+        // For most frames, just update elapsed time without checks
+        elapsedTime = currentTime - startTime;
       }
       
-      // Get current time with server offset applied
-      const currentTime = Date.now() + serverTimeOffset;
-      const difference = targetDate - currentTime;
-
-      // If the target date has passed
+      // Calculate actual time based on server time + our tracked elapsed time
+      const actualTime = serverTime + (elapsedTime / 1000) * 1000; // Convert to milliseconds
+      const difference = targetDate - actualTime;
+      
       if (difference <= 0) {
         countdownEl.innerText = "Windows 10 has reached end of life!";
+        cancelAnimationFrame(animationFrameId);
         return;
       }
-
-      // Calculate the time units
+      
+      // Calculate time units (only when needed for display)
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      // Update the display in the same format as the example
+      
       countdownEl.innerText = `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+      
+      // Request next frame
+      animationFrameId = requestAnimationFrame(updateCountdown);
     }
-
-    // Initial time sync
-    syncTime();
     
-    // Re-sync time periodically (every 10 minutes)
-    setInterval(syncTime, 600000);
-    
-    // Only start the countdown interval if we have a valid server time
-    function startCountdown() {
-      if (serverTimeOffset !== null) {
-        // Update countdown display every second
-        setInterval(updateCountdown, 1000);
-      }
-    }
+    // Start the animation loop
+    animationFrameId = requestAnimationFrame(updateCountdown);
   </script>
 </body>
 </html>
